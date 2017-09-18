@@ -1,7 +1,5 @@
 ##################################################################################################
 # Project: Added Value of Mussels
-# Group:   Building with Nature
-# Name:    Kate (Lingyu) Zhao: University of Waterloo
 ##################################################################################################
 # Regression: Mussel morphology parameters against AFDW/CI
 # ANOVA: Substrate/protection against AFDW/CI
