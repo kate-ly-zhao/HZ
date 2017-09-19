@@ -4,7 +4,6 @@
 # Regression: Mussel morphology parameters against AFDW/CI
 # ANOVA: Substrate/protection against AFDW/CI
 
-
 # ******************************************* Initializing packages
 install.packages("xlsx")
 install.packages("openxlsx")
@@ -14,7 +13,6 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
-# workDir <- "/Users/wangfangyumeng/Downloads" # Kate's MAC
 workDir <- "F:/Mussel Project" # HZ Computer
 setwd(workDir)
 
@@ -29,9 +27,9 @@ wavebreaker <- mussel_parameter$`Wavebreaker.(1/0)`
 AFDW <- mussel_parameter$`AFDW.(mg)`
 CI <- mussel_parameter$CI
 
-mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, wavebreaker, AFDW, CI)
+mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, wavebreaker, AFDW, CI) # Data frame with variables
 
-# # ******************************************* Sorting data
+# # ******************************************* Sorting data - IGNORE THIS FOR NOW
 # 
 # # Sorting by substrate
 # bare_pos <- grep(pattern = "bare", x = substrate)
@@ -47,8 +45,7 @@ mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, w
 # # Sorting by protection
 # wavebreaker <- mussel_parameter$`Wavebreaker.(1/0)`
 
-
-# ******************************************* Full model means
+# ******************************************* Full model means - IGNORE THIS FOR NOW
 
 # # Means for AFDW
 # plot(AFDW[order(substrate_vec)], pch = order(substrate_vec), main = "full model")
@@ -119,16 +116,16 @@ qqline(AFDW)
 # ******************************************* Testing for homogeneity of variances
 
 # **Bartlett Test of Homogeneity of Variances
-AFDW_var <- bartlett.test(AFDW ~ mussel_length, data = mussel_df)
+AFDW_var <- bartlett.test(AFDW ~ substrate, data = mussel_df) # The same can be done for CI/wavebreaker
 
 # Figner-Killeen Test of Homogeneity of Variances
-fligner.test(AFDW~mussel_length, data = mussel_df)
+fligner.test(AFDW ~ substrate, data = mussel_df)
 
 # Homogeneity of Variance Plot based on Brown-Forsynth
 install.packages("HH")
 library(HH)
-hov(AFDW ~ mussel_length, data = mussel_df)
-hovPlot(AFDW ~ mussel_length, data = mussel_df)
+hov(AFDW ~ substrate, data = mussel_df)
+hovPlot(AFDW ~ substrate, data = mussel_df)
 
 # ******************************************* One-Way ANOVA: Untransformed Data
 
@@ -194,7 +191,7 @@ qqnorm(residuals(CItuk_model), ylab = "Sample Quantiles for Residuals")
 qqline(residuals(CItuk_model), col = "red")
 plot(fitted(CItuk_model), residuals(CItuk_model))
 
-# # ******************************************* One-Way ANOVA: Box-Cox Transformed Data
+# # ******************************************* One-Way ANOVA: Box-Cox Transformed Data - IGNORE THIS FOR NOW
 # install.packages("MASS")
 # library(MASS)
 # 
@@ -226,7 +223,6 @@ plot(fitted(CItuk_model), residuals(CItuk_model))
 
 # **************************************************************************************
 # **************************************************************************************
-
 
 # ******************************************* Multiple (Linear) Regression
 # http://tutorials.iq.harvard.edu/R/Rstatistics/Rstatistics.html 
