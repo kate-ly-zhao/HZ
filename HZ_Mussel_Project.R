@@ -1,8 +1,11 @@
 ##################################################################################################
 # Project: Added Value of Mussels
+# Group:   Building with Nature
+# Name:    Kate (Lingyu) Zhao: University of Waterloo
 ##################################################################################################
 # Regression: Mussel morphology parameters against AFDW/CI
 # ANOVA: Substrate/protection against AFDW/CI
+
 
 # ******************************************* Initializing packages
 install.packages("xlsx")
@@ -13,11 +16,15 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
+# workDir <- "/Users/wangfangyumeng/Downloads" # Kate's MAC
 workDir <- "F:/Mussel Project" # HZ Computer
 setwd(workDir)
 
 # ******************************************* Reading in data files
 filelist <- list.files(path = workDir, pattern = glob2rx("Combined Final*.xlsx"))
+mussel_seed <- read.xlsx(filelist, sheet = 3)
+mussel_survival <- read.xlsx(filelist, sheet = 4)
+crab_data <- read.xlsx(filelist, sheet = 6)
 mussel_parameter <- read.xlsx(filelist, sheet = 5, startRow = 2, rows = 2:1975)
 mussel_length <- mussel_parameter$`length.(mm)`
 mussel_width <- mussel_parameter$width
@@ -27,9 +34,20 @@ wavebreaker <- mussel_parameter$`Wavebreaker.(1/0)`
 AFDW <- mussel_parameter$`AFDW.(mg)`
 CI <- mussel_parameter$CI
 
-mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, wavebreaker, AFDW, CI) # Data frame with variables
+mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, wavebreaker, AFDW, CI)
 
-# # ******************************************* Sorting data - IGNORE THIS FOR NOW
+subtidal_mussels <- read.xlsx(filelist, sheet = 8, startRow = 2)
+subtidal_df <- data.frame(subtidal_mussels$`length.(mm)`, subtidal_mussels$width, subtidal_mussels$height,
+                          subtidal_mussels$`AFDW.(mg)`, subtidal_mussels$CI)
+
+# ******************************************* Basic Stats
+seed_length <- mussel_seed$length.mm
+seed_AFDW <- mussel_seed$AFDW
+seed_CI <- mussel_seed$Condition.index
+seed_weight <- 0.612467 # Average weight of 1 mussel seeded
+seed_amount <- 10751.6 # Average amount of mussels per m^2
+  
+# # ******************************************* Sorting data
 # 
 # # Sorting by substrate
 # bare_pos <- grep(pattern = "bare", x = substrate)
@@ -45,33 +63,27 @@ mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, w
 # # Sorting by protection
 # wavebreaker <- mussel_parameter$`Wavebreaker.(1/0)`
 
-# ******************************************* Full model means - IGNORE THIS FOR NOW
+# ******************************************* Basic Plot Comparison of Intertidal vs. Subtidal Mussels
+plot(AFDW, type = "l", col = "red")
+lines(subtidal_mussels$`AFDW.(mg)`, col = "blue")
 
-# # Means for AFDW
-# plot(AFDW[order(substrate_vec)], pch = order(substrate_vec), main = "full model")
-# for (j in 1:3) {
-#   w <- which(order(substrate_vec) == j)
-#   lines(c(min(w), max(w)), c(mean(AFDW[order(substrate_vec)][w]), mean(AFDW[order(substrate_vec)][w])))
-#   for (i in 1:length(w)) {
-#     lines(c(w[i], w[i]), c(AFDW[order(substrate_vec)][w[i]], mean(AFDW[order(substrate_vec)][w])), lty = 2)
-#   }
-# }
-
-# Means for CI
-
-# ******************************************* Plotting results
+# ******************************************* Plotting results 
 install.packages("gplots")
 library(gplots)
 
 # Boxplot
 boxplot(AFDW ~ substrate, data = mussel_df,   # Substrate vs. AFDW
         xlab = "substrate", ylab = "AFDW")
+AFDW_sub_mean <- aggregate(AFDW ~ substrate, mussel_df, mean)
 boxplot(CI ~ substrate, data = mussel_df,     # Substrate vs. CI
         xlab = "substrate", ylab = "CI")
+CI_sub_mean <- aggregate(CI ~ substrate, mussel_df, mean)
 boxplot(AFDW ~ wavebreaker, data = mussel_df, # Wavebreaker vs. AFDW
         xlab = "wavebreaker", ylab = "AFDW")
+AFDW_wb_mean <- aggregate(AFDW ~ wavebreaker, mussel_df, mean)
 boxplot(CI ~ wavebreaker, data = mussel_df,   # Wavebreaker vs. CI
         xlab = "wavebreaker", ylab = "CI")
+CI_wb_mean <- aggregate(CI ~ wavebreaker, mussel_df, mean)
 
 # Using gplots
 plotmeans(AFDW ~ substrate, data = mussel_df)
@@ -84,6 +96,51 @@ install.packages("mvoutlier")
 library(mvoutlier)
 outliers <- aq.plot(mussel_df[c("mussel_length", "mussel_width", "mussel_height", "AFDW", "CI")])
 outliers # Shows list of outliers
+
+# ******************************************* Creating function for outlier removal
+# https://stackoverflow.com/questions/4787332/how-to-remove-outliers-from-a-dataset 
+
+remove_outliers <- function(x, na.rm = TRUE, ...) {
+  qnt <- quantile(x, probs = c(0.25, 0.75), na.rm = na.rm, ...)
+  H <- 1.5 * IQR(x, na.rm = na.rm)
+  y <- x
+  y[x < qnt[1] - H] <- NA
+  y[x > qnt[2] + H] <- NA
+  # y
+}
+
+# https://www.r-bloggers.com/identify-describe-plot-and-remove-the-outliers-from-the-dataset/ 
+# outlierKD <- function(dt, var) {
+#   var_name <- eval(substitute(var), eval(dt))
+#   na1 <- sum(is.na(var_name))
+#   m1 <- mean(var_name, na.rm = TRUE)
+#   par(mfrow = c(2, 2), oma = c(0, 0, 3, 0))
+#   boxplot(var_name, main = "With outliers")
+#   hist(var_name, main = "With outliers", xlab = NA, ylab = NA)
+#   outlier <- boxplot.stats(var_name)$out
+#   mo <- mean(outlier)
+#   var_name <- ifelse(var_name %in% outlier, NA, var_name)
+#   boxplot(var_name, main = "Without outliers")
+#   hist(var_name, main = "Without outliers", xlab = NA, ylab = NA)
+#   title("Outlier Check", outer = TRUE)
+#   na2 <- sum(is.na(var_name))
+#   cat("Outliers identified: ", na2 - na1, "\n")
+#   cat("Proportion (%) of outliers: ", round((na2 - na1) / sum(!is.na(var_name))*100, 1), "\n")
+#   cat("Mean of the outliers: ", round(mo, 2), "\n")
+#   m2 <- mean(var_name, na.rm = TRUE)
+#   cat("Mean without removing outliers: ", round(m1, 2), "\n")
+#   cat("Mean with removing outliers: ", round(m2, 2), "\n")
+#   response <- readline(prompt="Do you want to remove outliers and to replace with NA? [yes/no]: ")
+#   if(response == "y" | response == "yes"){
+#     dt[as.character(substitute(var))] <- invisible(var_name)
+#     assign(as.character(as.list(match.call())$dt), dt, envir = .GlobalEnv)
+#     cat("Outliers successfully removed", "\n")
+#     return(invisible(dt))
+#   } else{
+#     cat("Nothing changed", "\n")
+#     return(invisible(var_name))
+#   }
+# }
 
 # ******************************************* Testing for univariate normality
 
@@ -116,23 +173,35 @@ qqline(AFDW)
 # ******************************************* Testing for homogeneity of variances
 
 # **Bartlett Test of Homogeneity of Variances
-AFDW_var <- bartlett.test(AFDW ~ substrate, data = mussel_df) # The same can be done for CI/wavebreaker
+AFDW_sub_var <- bartlett.test(AFDW ~ substrate, data = mussel_df)
+CI_sub_var <- bartlett.test(CI ~ substrate, data = mussel_df)
+AFDW_wb_var <- bartlett.test(AFDW ~ wavebreaker, data = mussel_df)
+CI_wb_var <- bartlett.test(CI ~ wavebreaker, data = mussel_df)
 
-# Figner-Killeen Test of Homogeneity of Variances
+# Figner-Killeen Test of Homogeneity of Variances (Secondary Choice)
 fligner.test(AFDW ~ substrate, data = mussel_df)
+fligner.test(CI ~ substrate, data = mussel_df)
+fligner.test(AFDW ~ wavebreaker, data = mussel_df)
+fligner.test(CI ~ wavebreaker, data = mussel_df)
 
 # Homogeneity of Variance Plot based on Brown-Forsynth
 install.packages("HH")
 library(HH)
 hov(AFDW ~ substrate, data = mussel_df)
 hovPlot(AFDW ~ substrate, data = mussel_df)
+hov(CI ~ substrate, data = mussel_df)
+hovPlot(CI ~ substrate, data = mussel_df)
+# hov(AFDW ~ wavebreaker, data = mussel_df)
+# hovPlot(AFDW ~ wavebreaker, data = mussel_df)
+# hov(CI ~ wavebreaker, data = mussel_df)
+# hovPlot(CI ~ wavebreaker, data = mussel_df)
 
 # ******************************************* One-Way ANOVA: Untransformed Data
 
 CI_ANOVA <- aov(CI ~ factor(substrate))
 summary(CI_ANOVA)
 
-# Alternatively...
+# Alternatively...slightly higher precision
 AFDW_ANOVA <- lm(AFDW ~ factor(substrate))
 summary(AFDW_ANOVA)
 lm(formula = AFDW ~ factor(substrate))
@@ -156,11 +225,13 @@ boxplot(AFDW_tuk ~ substrate, data = mussel_df,
 boxplot(AFDW_tuk ~ wavebreaker, data = mussel_df,
         ylab = "Tukey-Transformed AFDW", xlab = "Wavebreaker")
 
+# Type I ANOVA
+summary(aov(mussel_df$AFDW_tuk ~ factor(substrate))) # ANOVA
+summary(aov(mussel_df$AFDW_tuk ~ factor(wavebreaker)))
 
+# Type II ANOVA (Or switch to Type III)
 AFDWtuk_model <- lm(AFDW_tuk ~ substrate, data = mussel_df)
 Anova(AFDWtuk_model, type = "II")
-
-summary(aov(mussel_df$AFDW_tuk ~ factor(substrate))) # ANOVA
 
 AFDWtuk_residuals = residuals(AFDWtuk_model) # Residuals
 plotNormalHistogram(AFDWtuk_residuals)
@@ -178,11 +249,13 @@ boxplot(CI_tuk ~ substrate, data = mussel_df,
 boxplot(CI_tuk ~ wavebreaker, data = mussel_df,
         ylab = "Tukey-Transformed CI", xlab = "Wavebreaker")
 
+# Type I ANOVA
+summary(aov(mussel_df$CI_tuk ~ factor(substrate))) # ANOVA
+summary(aov(mussel_df$CI_tuk ~ factor(wavebreaker)))
 
+# Type II ANOVA
 CItuk_model <- lm(CI_tuk ~ substrate, data = mussel_df)
 Anova(CItuk_model, type = "II")
-
-summary(aov(mussel_df$CI_tuk ~ factor(substrate))) # ANOVA
 
 CItuk_residuals = residuals(CItuk_model) # Residuals
 plotNormalHistogram(CItuk_residuals)
@@ -191,7 +264,7 @@ qqnorm(residuals(CItuk_model), ylab = "Sample Quantiles for Residuals")
 qqline(residuals(CItuk_model), col = "red")
 plot(fitted(CItuk_model), residuals(CItuk_model))
 
-# # ******************************************* One-Way ANOVA: Box-Cox Transformed Data - IGNORE THIS FOR NOW
+# # ******************************************* One-Way ANOVA: Box-Cox Transformed Data
 # install.packages("MASS")
 # library(MASS)
 # 
@@ -223,6 +296,7 @@ plot(fitted(CItuk_model), residuals(CItuk_model))
 
 # **************************************************************************************
 # **************************************************************************************
+
 
 # ******************************************* Multiple (Linear) Regression
 # http://tutorials.iq.harvard.edu/R/Rstatistics/Rstatistics.html 
@@ -357,3 +431,91 @@ vcov(m.ci.mod) # Covariance matrix for model parameters
 
 # Check assumptions through plotting (normal distribution, homoscedastic)
 plot(m.ci.mod)
+
+# ******************************************* Linear Regression - ML/CI
+# Examining the data
+sts.ml.ci <- subset(mussel_df, select = c("mussel_length", "CI"))
+summary(sts.ml.ci) # Summary of results
+cor(sts.ml.ci) # Correlation btwn mussel length & CI
+
+# Plotting the data
+plot(sts.ml.ci)
+
+# Fitting linear model
+ml.ci.mod <- lm(CI ~ mussel_length, data = mussel_df) #Regression formula
+summary(ml.ci.mod) # Regression coefficients table
+coef(summary(ml.ci.mod)) # Model Coefficients
+confint(ml.ci.mod, level = 0.95) # CIs for model parameters
+# fitted(ml.ci.mod) # Predicted values
+# residuals(ml.ci.mod) # Residuals
+anova(ml.ci.mod) # Anova table
+vcov(ml.ci.mod) # Covariance matrix for model parameters
+# influence(ml.ci.mod) # Regression diagnostics
+# class(ml.ci.mod)
+# names(ml.ci.mod)
+# methods(class = class(ml.ci.mod))[1:9]
+
+# Check assumptions through plotting (normal distribution, homoscedastic)
+plot(ml.ci.mod)
+
+# ******************************************* Linear Regression - MW/CI
+# Examining the data
+sts.mw.ci <- subset(mussel_df, select = c("mussel_width", "CI"))
+summary(sts.mw.ci) # Summary of results
+cor(sts.mw.ci) # Correlation btwn mussel width & CI
+
+# Plotting the data
+plot(sts.mw.ci)
+
+# Fitting linear model
+mw.ci.mod <- lm(CI ~ mussel_width, data = mussel_df) #Regression formula
+summary(mw.ci.mod) # Regression coefficients table
+coef(summary(mw.ci.mod)) # Model Coefficients
+confint(mw.ci.mod, level = 0.95) # CIs for model parameters
+# fitted(mw.ci.mod) # Predicted values
+# residuals(mw.ci.mod) # Residuals
+anova(mw.ci.mod) # Anova table
+vcov(mw.ci.mod) # Covariance matrix for model parameters
+# influence(mw.ci.mod) # Regression diagnostics
+# class(mw.ci.mod)
+# names(mw.ci.mod)
+# methods(class = class(mw.ci.mod))[1:9]
+
+# Check assumptions through plotting (normal distribution, homoscedastic)
+plot(mw.ci.mod)
+
+# ******************************************* Linear Regression - MH/CI
+# Examining the data
+sts.mh.ci <- subset(mussel_df, select = c("mussel_height", "CI"))
+summary(sts.mh.ci) # Summary of results
+cor(sts.mh.ci) # Correlation btwn mussel height & XI
+
+# Plotting the data
+plot(sts.mh.ci)
+
+# Fitting linear model
+mh.ci.mod <- lm(CI ~ mussel_height, data = mussel_df) #Regression formula
+summary(mh.ci.mod) # Regression coefficients table
+coef(summary(mh.ci.mod)) # Model Coefficients
+confint(mh.ci.mod, level = 0.95) # CIs for model parameters
+# fitted(mh.ci.mod) # Predicted values
+# residuals(mh.ci.mod) # Residuals
+anova(mh.ci.mod) # Anova table
+vcov(mh.ci.mod) # Covariance matrix for model parameters
+# influence(mh.ci.mod) # Regression diagnostics
+# class(mh.ci.mod)
+# names(mh.ci.mod)
+# methods(class = class(mh.ci.mod))[1:9]
+
+# Check assumptions through plotting (normal distribution, homoscedastic)
+plot(mh.ci.mod)
+
+
+
+# **************************************************************************************
+# **************************************************************************************
+
+# ******************************************* Generalized Linear Models
+
+
+
