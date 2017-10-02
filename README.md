@@ -1,6 +1,6 @@
 # Important Factor: Survival
 
-# GLM for survival
+# General Linear Mixed Model for survival (fixed + random factors)
 glm(survival ~ substrate * wavebreaker)
 Random factor: plot, square (ignore for now)
 Check for overdispersion
