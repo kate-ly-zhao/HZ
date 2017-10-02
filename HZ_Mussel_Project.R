@@ -1,7 +1,6 @@
 ##################################################################################################
 # Project: Added Value of Mussels
 # Group:   Building with Nature
-# Name:    Kate (Lingyu) Zhao: University of Waterloo
 ##################################################################################################
 # Regression: Mussel morphology parameters against AFDW/CI
 # ANOVA: Substrate/protection against AFDW/CI
@@ -16,7 +15,6 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
-# workDir <- "/Users/wangfangyumeng/Downloads" # Kate's MAC
 workDir <- "F:/Mussel Project" # HZ Computer
 setwd(workDir)
 
