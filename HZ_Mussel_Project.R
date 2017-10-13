@@ -554,6 +554,10 @@ survival <- as.numeric(mussel_survival$Amount.of.mussels)
 
 # Check to see: wavebreaker*substrate OR wavebreaker + substrate
 #               What family of GLMM to use? Bernoulli? Poisson? Binomial?
+# Continuous - Bernoulli (CI, AFDW)
+# Counted - Poisson (Survival)
+# Proportion survived - Binomial (beginning/end kinda thing)
+
 survival.model <- glmm(survival ~ mussel_survival$Wavebreaker + mussel_survival$Substrate, 
                        random = list(mussel_survival$Plot), data = mussel_df, family.glmm = bernoulli.glmm, m = 10^4,
                        debug = TRUE)
