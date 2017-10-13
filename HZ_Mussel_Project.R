@@ -15,6 +15,7 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
+# workDir <- "/Users/wangfangyumeng/Downloads" # Kate's MAC
 workDir <- "F:/Mussel Project" # HZ Computer
 setwd(workDir)
 
@@ -508,12 +509,55 @@ vcov(mh.ci.mod) # Covariance matrix for model parameters
 # Check assumptions through plotting (normal distribution, homoscedastic)
 plot(mh.ci.mod)
 
+# ******************************************* Linear Regression - Substrate and Wavebreaker/CI
+# Examining the data
+sts.swb.ci <- subset(mussel_df, select = c("substrate", "wavebreaker", "CI"))
+summary(sts.swb.ci) # Summary of results
 
+# Fitting linear model
+####### CHECK THIS PART: substrate*wavebreaker OR substrate + wavebreaker
+swb.ci.mod <- lm(CI ~ substrate * wavebreaker, data = mussel_df) #Regression formula
+summary(swb.ci.mod) # Regression coefficients table
+coef(summary(swb.ci.mod)) # Model Coefficients
+confint(swb.ci.mod, level = 0.95) # CIs for model parameters
+# fitted(swb.ci.mod) # Predicted values
+# residuals(swb.ci.mod) # Residuals
+anova(swb.ci.mod) # Anova table
+vcov(swb.ci.mod) # Covariance matrix for model parameters
+# influence(swb.ci.mod) # Regression diagnostics
+# class(swb.ci.mod)
+# names(swb.ci.mod)
+# methods(class = class(swb.ci.mod))[1:9]
+
+# Check assumptions through plotting (normal distribution, homoscedastic)
+plot(swb.ci.mod)
 
 # **************************************************************************************
 # **************************************************************************************
 
 # ******************************************* Generalized Linear Models
+# http://www.statmethods.net/advstats/glm.html 
+# http://www.stat.columbia.edu/~martin/W2024/R11.pdf 
+ 
+install.packages("glmm")
+library(glmm)
+
+# Logistic Regression
+m.wb.glm <- glm(wavebreaker ~ mussel_length + mussel_width + mussel_height, 
+                   family = binomial(link = "logit"), data = mussel_df)
+
+# Poisson Regression
+
+# Survival Analysis
+
+survival <- as.numeric(mussel_survival$Amount.of.mussels)
+
+# Check to see: wavebreaker*substrate OR wavebreaker + substrate
+#               What family of GLMM to use? Bernoulli? Poisson? Binomial?
+survival.model <- glmm(survival ~ mussel_survival$Wavebreaker + mussel_survival$Substrate, 
+                       random = list(), data = mussel_df, family.glmm = bernoulli.glmm, m = 10^4,
+                       debug = TRUE)
 
 
 
+# GLMM - CI/AFDW/Length/Width/Height against Substrate/Wavebreaker/Plot
