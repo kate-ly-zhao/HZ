@@ -555,9 +555,23 @@ survival <- as.numeric(mussel_survival$Amount.of.mussels)
 # Check to see: wavebreaker*substrate OR wavebreaker + substrate
 #               What family of GLMM to use? Bernoulli? Poisson? Binomial?
 survival.model <- glmm(survival ~ mussel_survival$Wavebreaker + mussel_survival$Substrate, 
-                       random = list(), data = mussel_df, family.glmm = bernoulli.glmm, m = 10^4,
+                       random = list(mussel_survival$Plot), data = mussel_df, family.glmm = bernoulli.glmm, m = 10^4,
                        debug = TRUE)
 
 
 
 # GLMM - CI/AFDW/Length/Width/Height against Substrate/Wavebreaker/Plot
+# READ PLOT DATA IN
+# Read Lecture Day 7
+
+lm(CI ~ substrate*wavebreaker, data = mussel_df) # GLM
+lme(CI ~ substrate*wavebreaker, random = ~1|plot) #glmm
+
+# 1 random effect for each level of plot and each square within plot
+m1 <- lme(CI ~ substrate*wavebreaker, random = ~1|plot/square) # MOST COMPLEX MODEL - change CI into survival, AFDW, L/W/H
+
+m2 <- update(m1, random = ~1|square) #reducing complexity
+anova(m1, m2) # Checking significance 
+
+m3 <- update(m1, random = ~1|plot)
+anova(m1, m3)
