@@ -15,7 +15,6 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
-# workDir <- "/Users/wangfangyumeng/Downloads" # Kate's MAC
 workDir <- "F:/Mussel Project" # HZ Computer
 setwd(workDir)
 
