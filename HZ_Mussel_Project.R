@@ -553,28 +553,53 @@ survival <- as.numeric(mussel_survival$Amount.of.mussels)
 
 # Check to see: wavebreaker*substrate OR wavebreaker + substrate
 #               What family of GLMM to use? Bernoulli? Poisson? Binomial?
-# Continuous - Bernoulli (CI, AFDW)
-# Counted - Poisson (Survival)
-# Proportion survived - Binomial (beginning/end kinda thing)
+# Continuous data - Bernoulli (CI, AFDW)
+# Counted data - Poisson (Survival)
+# Proportion survived (beginning vs. end) - Binomial
 
-survival.model <- glmm(survival ~ mussel_survival$Wavebreaker + mussel_survival$Substrate, 
-                       random = list(mussel_survival$Plot), data = mussel_df, family.glmm = bernoulli.glmm, m = 10^4,
-                       debug = TRUE)
+# 
+# survival.model <- glmm(survival ~ mussel_survival$Wavebreaker + mussel_survival$Substrate, 
+#                        random = list(mussel_survival$Plot), data = mussel_df, 
+#                        family.glmm = bernoulli.glmm, m = 10^4, debug = TRUE)
 
 
+# GLMM - CI/AFDW/Length/Width/Height/Survival against Substrate/Wavebreaker/Plot
 
-# GLMM - CI/AFDW/Length/Width/Height against Substrate/Wavebreaker/Plot
-# READ PLOT DATA IN
-# Read Lecture Day 7
+install.packages("nlme")
+library(nlme)
 
-lm(CI ~ substrate*wavebreaker, data = mussel_df) # GLM
-lme(CI ~ substrate*wavebreaker, random = ~1|plot) #glmm
+CI.m1 <- lme(CI ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
+CI.m2 <- update(CI.m1, random = ~1|squarecode) # Reducing complexity
+anova(CI.m1, CI.m2) # Checking significance 
+CI.m3 <- update(CI.m1, random = ~1|plotnr)
+anova(CI.m1, CI.m3)
 
-# 1 random effect for each level of plot and each square within plot
-m1 <- lme(CI ~ substrate*wavebreaker, random = ~1|plot/square) # MOST COMPLEX MODEL - change CI into survival, AFDW, L/W/H
+AFDW.m1 <- lme(AFDW ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
+AFDW.m2 <- update(AFDW.m1, random = ~1|squarecode) # Reducing complexity
+anova(AFDW.m1, AFDW.m2) # Checking significance 
+AFDW.m3 <- update(AFDW.m1, random = ~1|plotnr)
+anova(AFDW.m1, AFDW.m3)
 
-m2 <- update(m1, random = ~1|square) #reducing complexity
-anova(m1, m2) # Checking significance 
+survival.m1 <- lme(survival ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
+survival.m2 <- update(survival.m1, random = ~1|squarecode) # Reducing complexity
+anova(survival.m1, survival.m2) # Checking significance 
+survival.m3 <- update(survival.m1, random = ~1|plotnr)
+anova(survival.m1, survival.m3)
 
-m3 <- update(m1, random = ~1|plot)
-anova(m1, m3)
+length.m1 <- lme(mussel_length ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
+length.m2 <- update(length.m1, random = ~1|squarecode) # Reducing complexity
+anova(length.m1, length.m2) # Checking significance 
+length.m3 <- update(length.m1, random = ~1|plotnr)
+anova(length.m1, length.m3)
+
+width.m1 <- lme(mussel_width ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
+width.m2 <- update(width.m1, random = ~1|squarecode) # Reducing complexity
+anova(width.m1, width.m2) # Checking significance 
+width.m3 <- update(width.m1, random = ~1|plotnr)
+anova(width.m1, width.m3)
+
+height.m1 <- lme(mussel_height ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
+height.m2 <- update(height.m1, random = ~1|squarecode) # Reducing complexity
+anova(height.m1, height.m2) # Checking significance 
+height.m3 <- update(height.m1, random = ~1|plotnr)
+anova(height.m1, height.m3)
