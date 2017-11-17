@@ -15,7 +15,7 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
-workDir <- "F:/Mussel Project" # HZ Computer
+workDir <- "F:/Mussel Project"
 setwd(workDir)
 
 # ******************************************* Reading in data files
@@ -23,7 +23,28 @@ filelist <- list.files(path = workDir, pattern = glob2rx("Combined Final*.xlsx")
 mussel_seed <- read.xlsx(filelist, sheet = 3)
 mussel_survival <- read.xlsx(filelist, sheet = 4)
 crab_data <- read.xlsx(filelist, sheet = 6)
-mussel_parameter <- read.xlsx(filelist, sheet = 5, startRow = 2, rows = 2:1975)
+mussel_parameter <- read.xlsx(filelist, sheet = 5, startRow = 2, rows = 2:2572)
+
+# Outlier removal condition 1 -> CI < 6
+outrem1 <- mussel_parameter$CI < 6
+mussel_parameter <- mussel_parameter[outrem1,]
+
+# Outlier removal condition 2 -> range for Length/AFDW
+plot(x = mussel_parameter$`AFDW.(mg)`, y = mussel_parameter$`length.(mm)`, log = "xy")
+outlier1 <- mussel_parameter$`AFDW.(mg)` < 5
+mussel_parameter <- mussel_parameter[!outlier1,]
+outlier2 <-  mussel_parameter$`AFDW.(mg)` < 20 &
+  mussel_parameter$`length.(mm)` > 30 
+mussel_parameter <- mussel_parameter[!outlier2,]
+outlier3 <-  mussel_parameter$`AFDW.(mg)` > 300 & mussel_parameter$`length.(mm)` < 35
+mussel_parameter <- mussel_parameter[!outlier3,]
+outlier4 <- mussel_parameter$`AFDW.(mg)` < 100 &
+  mussel_parameter$`AFDW.(mg)`> 80 & 
+  mussel_parameter$`length.(mm)` < 21 &
+  mussel_parameter$`length.(mm)` > 20
+mussel_parameter <- mussel_parameter[!outlier4,]
+
+
 mussel_length <- mussel_parameter$`length.(mm)`
 mussel_width <- mussel_parameter$width
 mussel_height <- mussel_parameter$height
@@ -31,8 +52,11 @@ substrate <- mussel_parameter$`substrate(sand,oyster,net)`
 wavebreaker <- mussel_parameter$`Wavebreaker.(1/0)`
 AFDW <- mussel_parameter$`AFDW.(mg)`
 CI <- mussel_parameter$CI
+plotnr <- mussel_parameter$plotnr
+squarecode <- mussel_parameter$squarecode
 
-mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, substrate, wavebreaker, AFDW, CI)
+mussel_df <- data.frame(mussel_length, mussel_width, mussel_height, 
+                        substrate, wavebreaker, AFDW, CI, plotnr, squarecode)
 
 subtidal_mussels <- read.xlsx(filelist, sheet = 8, startRow = 2)
 subtidal_df <- data.frame(subtidal_mussels$`length.(mm)`, subtidal_mussels$width, subtidal_mussels$height,
@@ -65,6 +89,13 @@ seed_amount <- 10751.6 # Average amount of mussels per m^2
 plot(AFDW, type = "l", col = "red")
 lines(subtidal_mussels$`AFDW.(mg)`, col = "blue")
 
+# ******************************************* Basic Comparison of Before/After for Mussels
+
+# Find difference in treatments in morphology - if none, compare against all new mussels
+# If there is difference, compare separately
+# One-way anova
+
+
 # ******************************************* Plotting results 
 install.packages("gplots")
 library(gplots)
@@ -87,7 +118,7 @@ CI_wb_mean <- aggregate(CI ~ wavebreaker, mussel_df, mean)
 plotmeans(AFDW ~ substrate, data = mussel_df)
 plotmeans(CI ~ substrate, data = mussel_df)
 plotmeans(AFDW ~ wavebreaker, data = mussel_df)
-plotmeans(CI ~ wavebreaker, data = mussel_df)
+plotmeans(CI ~ wavebreaker, data = mussel_df, n.label = FALSE) #n.label removes # of counts
 
 # ******************************************* Detecting outliers
 install.packages("mvoutlier")
@@ -580,6 +611,7 @@ anova(AFDW.m1, AFDW.m2) # Checking significance
 AFDW.m3 <- update(AFDW.m1, random = ~1|plotnr)
 anova(AFDW.m1, AFDW.m3)
 
+# Ignore NA's (na.omit or na.rm)
 survival.m1 <- lme(survival ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
 survival.m2 <- update(survival.m1, random = ~1|squarecode) # Reducing complexity
 anova(survival.m1, survival.m2) # Checking significance 
@@ -603,3 +635,10 @@ height.m2 <- update(height.m1, random = ~1|squarecode) # Reducing complexity
 anova(height.m1, height.m2) # Checking significance 
 height.m3 <- update(height.m1, random = ~1|plotnr)
 anova(height.m1, height.m3)
+
+
+# Survival against crabs??
+
+# Survival graphs against substrate/wavebreaker
+
+# Growth difference btwn intertidal vs subtidal
