@@ -1,10 +1,8 @@
 ##################################################################################################
 # Project: Added Value of Mussels
 # Group:   Building with Nature
+# Name:    Kate (Lingyu) Zhao: University of Waterloo
 ##################################################################################################
-# Regression: Mussel morphology parameters against AFDW/CI
-# ANOVA: Substrate/protection against AFDW/CI
-
 
 # ******************************************* Initializing packages
 install.packages("xlsx")
@@ -15,15 +13,15 @@ library(openxlsx)
 library(ggplot2)
 
 # ******************************************* Setting work directory
-workDir <- "F:/Mussel Project"
+# workDir <- "/Users/wangfangyumeng/Downloads" # Kate's MAC
+workDir <- "F:/Mussel Project" # HZ Computer
 setwd(workDir)
 
 # ******************************************* Reading in data files
 filelist <- list.files(path = workDir, pattern = glob2rx("Combined Final*.xlsx"))
-mussel_seed <- read.xlsx(filelist, sheet = 3)
-mussel_survival <- read.xlsx(filelist, sheet = 4)
+mussel_survival <- read.xlsx(filelist, sheet = 9)
 crab_data <- read.xlsx(filelist, sheet = 6)
-mussel_parameter <- read.xlsx(filelist, sheet = 5, startRow = 2, rows = 2:2572)
+mussel_parameter <- read.xlsx(filelist, sheet = 5, startRow = 2, rows = 2:3015)
 
 # Outlier removal condition 1 -> CI < 6
 outrem1 <- mussel_parameter$CI < 6
@@ -36,20 +34,20 @@ mussel_parameter <- mussel_parameter[!outlier1,]
 outlier2 <-  mussel_parameter$`AFDW.(mg)` < 20 &
   mussel_parameter$`length.(mm)` > 30 
 mussel_parameter <- mussel_parameter[!outlier2,]
-outlier3 <-  mussel_parameter$`AFDW.(mg)` > 300 & mussel_parameter$`length.(mm)` < 35
-mussel_parameter <- mussel_parameter[!outlier3,]
-outlier4 <- mussel_parameter$`AFDW.(mg)` < 100 &
-  mussel_parameter$`AFDW.(mg)`> 80 & 
-  mussel_parameter$`length.(mm)` < 21 &
-  mussel_parameter$`length.(mm)` > 20
-mussel_parameter <- mussel_parameter[!outlier4,]
-
+# outlier3 <-  mussel_parameter$`AFDW.(mg)` > 300 & mussel_parameter$`length.(mm)` < 35
+# mussel_parameter <- mussel_parameter[!outlier3,]
+# outlier4 <- mussel_parameter$`AFDW.(mg)` < 100 &
+#   mussel_parameter$`AFDW.(mg)`> 80 & 
+#   mussel_parameter$`length.(mm)` < 21 &
+#   mussel_parameter$`length.(mm)` > 20
+# mussel_parameter <- mussel_parameter[!outlier4,]
 
 mussel_length <- mussel_parameter$`length.(mm)`
 mussel_width <- mussel_parameter$width
 mussel_height <- mussel_parameter$height
 substrate <- mussel_parameter$`substrate(sand,oyster,net)`
 wavebreaker <- mussel_parameter$`Wavebreaker.(1/0)`
+# wavebreaker <- as.character(wavebreaker)
 AFDW <- mussel_parameter$`AFDW.(mg)`
 CI <- mussel_parameter$CI
 plotnr <- mussel_parameter$plotnr
@@ -59,10 +57,22 @@ mussel_df <- data.frame(mussel_length, mussel_width, mussel_height,
                         substrate, wavebreaker, AFDW, CI, plotnr, squarecode)
 
 subtidal_mussels <- read.xlsx(filelist, sheet = 8, startRow = 2)
-subtidal_df <- data.frame(subtidal_mussels$`length.(mm)`, subtidal_mussels$width, subtidal_mussels$height,
-                          subtidal_mussels$`AFDW.(mg)`, subtidal_mussels$CI)
+subtidal_df <- data.frame(subtidal_mussels$`length.(mm)`, subtidal_mussels$width, 
+                          subtidal_mussels$height, subtidal_mussels$`AFDW.(mg)`, subtidal_mussels$CI)
 
 # ******************************************* Basic Stats
+mussel_seed <- read.xlsx(filelist, sheet = 3)
+
+mussel_seed <- mussel_seed[mussel_seed$Condition.index < 8, ]
+
+plot(x = mussel_seed$AFDW, y = mussel_seed$length.mm, log = "xy")
+outlierx <- mussel_seed$AFDW < 0.5
+mussel_seed <- mussel_seed[!outlierx,]
+outliery <-  mussel_seed$AFDW < 50 &
+  mussel_seed$length.mm < 7 
+mussel_seed <- mussel_seed[!outliery,]
+
+  
 seed_length <- mussel_seed$length.mm
 seed_AFDW <- mussel_seed$AFDW
 seed_CI <- mussel_seed$Condition.index
@@ -115,10 +125,72 @@ boxplot(CI ~ wavebreaker, data = mussel_df,   # Wavebreaker vs. CI
 CI_wb_mean <- aggregate(CI ~ wavebreaker, mussel_df, mean)
 
 # Using gplots
-plotmeans(AFDW ~ substrate, data = mussel_df)
-plotmeans(CI ~ substrate, data = mussel_df)
-plotmeans(AFDW ~ wavebreaker, data = mussel_df)
+plotmeans(AFDW ~ substrate, data = mussel_df, n.label = FALSE)
+plotmeans(CI ~ substrate, data = mussel_df, n.label = FALSE)
+plotmeans(AFDW ~ wavebreaker, data = mussel_df, n.label = FALSE)
 plotmeans(CI ~ wavebreaker, data = mussel_df, n.label = FALSE) #n.label removes # of counts
+
+ggplot(mussel_df, aes(x = substrate, y = AFDW)) + 
+  geom_boxplot(fill = c("tomato1", "darkolivegreen1", "dodgerblue1"), 
+               colour = c("tomato4", "darkolivegreen4", "dodgerblue4"), alpha = 0.7, 
+               outlier.shape = 20) + 
+  scale_x_discrete(name = "Substrate Type") + 
+  scale_y_continuous(name = "AFDW [mg]", breaks = seq(0, 250, 50), limits = c(0, 250)) 
+
+ggplot(mussel_df, aes(x = substrate, y = CI)) + 
+  geom_boxplot(fill = c("tomato1", "darkolivegreen1", "dodgerblue1"), 
+               colour = c("tomato4", "darkolivegreen4", "dodgerblue4"), alpha = 0.7, 
+               outlier.shape = 20) +
+  scale_x_discrete(name = "Substrate Type") + scale_y_continuous(name = "Condition Index") 
+
+ggplot(mussel_df, aes(x = factor(wavebreaker), y = AFDW)) + 
+  geom_boxplot(fill = c("tomato1", "olivedrab1"), colour = c("tomato","olivedrab"), alpha = 0.7, 
+               outlier.shape = 20) + 
+  scale_x_discrete(name = "Wavebreaker") + 
+  scale_y_continuous(name = "AFDW [mg]", breaks = seq(0, 250, 50), limits = c(0, 250)) 
+
+ggplot(mussel_df, aes(x = factor(wavebreaker), y = CI)) + 
+  geom_boxplot(fill = c("tomato1", "olivedrab1"), colour = c("tomato","olivedrab"), alpha = 0.7, 
+               outlier.shape = 20) + 
+  scale_x_discrete(name = "Wavebreaker") + scale_y_continuous(name = "Condition Index") 
+
+ggplot(mussel_df, aes(x = substrate, y = mussel_length)) + 
+  geom_boxplot(fill = c("tomato1", "darkolivegreen1", "dodgerblue1"), 
+               colour = c("tomato4", "darkolivegreen4", "dodgerblue4"), alpha = 0.7, 
+               outlier.shape = 20) + 
+  scale_x_discrete(name = "Substrate Type") + 
+  scale_y_continuous(name = "Length [mm]", limits = c(0, 50)) 
+
+ggplot(mussel_df, aes(x = factor(wavebreaker), y = mussel_length)) + 
+  geom_boxplot(fill = c("tomato1", "olivedrab1"), colour = c("tomato","olivedrab"), alpha = 0.7, 
+               outlier.shape = 20) + 
+  scale_x_discrete(name = "Wavebreaker") + 
+  scale_y_continuous(name = "Length [mm]", limits = c(0, 50)) 
+
+
+mussel_df$subwb <- interaction(mussel_df$wavebreaker, mussel_df$substrate)
+
+ggplot(aes(y = AFDW, x = subwb), data = mussel_df) + 
+  geom_boxplot(fill = c("tomato3", "tomato1", "olivedrab3", "olivedrab1", "dodgerblue3", "dodgerblue1"), 
+               colour = c("tomato4", "tomato4", "olivedrab4", "olivedrab4", "dodgerblue4", "dodgerblue4"), 
+               alpha = 0.7, outlier.shape = 20) +
+  scale_x_discrete(name = "Substrate/WB Combination") + 
+  scale_y_continuous(name = "AFDW", breaks = seq(0, 250, 50), limits = c(0, 250))
+
+ggplot(aes(y = CI, x = subwb), data = mussel_df) + 
+  geom_boxplot(fill = c("tomato3", "tomato1", "olivedrab3", "olivedrab1", "dodgerblue3", "dodgerblue1"), 
+               colour = c("tomato4", "tomato4", "olivedrab4", "olivedrab4", "dodgerblue4", "dodgerblue4"),
+               alpha = 0.7, outlier.shape = 20) +
+  scale_x_discrete(name = "Substrate/WB Combination") + 
+  scale_y_continuous(name = "CI")
+
+ggplot(aes(y = mussel_length, x = subwb), data = mussel_df) + 
+  geom_boxplot(fill = c("tomato3", "tomato1", "olivedrab3", "olivedrab1", "dodgerblue3", "dodgerblue1"), 
+               colour = c("tomato4", "tomato4", "olivedrab4", "olivedrab4", "dodgerblue4", "dodgerblue4"),
+               alpha = 0.7, outlier.shape = 20) +
+  scale_x_discrete(name = "Substrate/WB Combination") + 
+  scale_y_continuous(name = "Length [mm]")
+
 
 # ******************************************* Detecting outliers
 install.packages("mvoutlier")
@@ -176,6 +248,7 @@ remove_outliers <- function(x, na.rm = TRUE, ...) {
 # **Shapiro-Wilk Test
 AFDW_normality <- shapiro.test(AFDW)
 CI_normality <- shapiro.test(CI)
+survival_normality <- shapiro.test(mussel_survival$Corrected.Quadrant.Amount)
 
 # Q-Q Plot -> Shows data is clearly not normal
 attach(mussel_df)
@@ -227,14 +300,14 @@ hovPlot(CI ~ substrate, data = mussel_df)
 
 # ******************************************* One-Way ANOVA: Untransformed Data
 
-CI_ANOVA <- aov(CI ~ factor(substrate))
-summary(CI_ANOVA)
-
-# Alternatively...slightly higher precision
-AFDW_ANOVA <- lm(AFDW ~ factor(substrate))
-summary(AFDW_ANOVA)
-lm(formula = AFDW ~ factor(substrate))
-anova(AFDW_ANOVA) # Performing F-test
+# CI_ANOVA <- aov(CI ~ factor(substrate))
+# summary(CI_ANOVA)
+# 
+# # Alternatively...slightly higher precision
+# AFDW_ANOVA <- lm(AFDW ~ factor(substrate))
+# summary(AFDW_ANOVA)
+# lm(formula = AFDW ~ factor(substrate))
+# anova(AFDW_ANOVA) # Performing F-test
 
 # ******************************************* One-Way ANOVA: Tukey-Transformed Data
 # Note: anova - Type I tests (variables added in sequential order)
@@ -255,19 +328,28 @@ boxplot(AFDW_tuk ~ wavebreaker, data = mussel_df,
         ylab = "Tukey-Transformed AFDW", xlab = "Wavebreaker")
 
 # Type I ANOVA
-summary(aov(mussel_df$AFDW_tuk ~ factor(substrate))) # ANOVA
-summary(aov(mussel_df$AFDW_tuk ~ factor(wavebreaker)))
 
-# Type II ANOVA (Or switch to Type III)
-AFDWtuk_model <- lm(AFDW_tuk ~ substrate, data = mussel_df)
-Anova(AFDWtuk_model, type = "II")
+AFDW_ANOVA <- aov(mussel_df$AFDW_tuk ~ substrate*wavebreaker)
+summary(AFDW_ANOVA)
 
-AFDWtuk_residuals = residuals(AFDWtuk_model) # Residuals
-plotNormalHistogram(AFDWtuk_residuals)
+AFDW_ANOVA2 <- aov(mussel_df$AFDW_tuk ~ factor(substrate))
+summary(AFDW_ANOVA2)
+anova(AFDW_ANOVA, AFDW_ANOVA2)
 
-qqnorm(residuals(AFDWtuk_model), ylab = "Sample Quantiles for Residuals")
-qqline(residuals(AFDWtuk_model), col = "red")
-plot(fitted(AFDWtuk_model), residuals(AFDWtuk_model))
+AFDW_ANOVA3 <- aov(mussel_df$AFDW_tuk ~ factor(wavebreaker))
+summary(AFDW_ANOVA3)
+anova(AFDW_ANOVA, AFDW_ANOVA3)
+
+# # Type II ANOVA (Or switch to Type III)
+# AFDWtuk_model <- lm(AFDW_tuk ~ substrate, data = mussel_df)
+# Anova(AFDWtuk_model, type = "II")
+# 
+# AFDWtuk_residuals = residuals(AFDWtuk_model) # Residuals
+# plotNormalHistogram(AFDWtuk_residuals)
+# 
+# qqnorm(residuals(AFDWtuk_model), ylab = "Sample Quantiles for Residuals")
+# qqline(residuals(AFDWtuk_model), col = "red")
+# plot(fitted(AFDWtuk_model), residuals(AFDWtuk_model))
 
 # ***************** CI
 mussel_df$CI_tuk <- transformTukey(mussel_df$CI, plotit = FALSE)
@@ -279,19 +361,59 @@ boxplot(CI_tuk ~ wavebreaker, data = mussel_df,
         ylab = "Tukey-Transformed CI", xlab = "Wavebreaker")
 
 # Type I ANOVA
-summary(aov(mussel_df$CI_tuk ~ factor(substrate))) # ANOVA
-summary(aov(mussel_df$CI_tuk ~ factor(wavebreaker)))
+CI_ANOVA <- aov(mussel_df$CI_tuk ~ substrate*wavebreaker)
+summary(CI_ANOVA)
 
-# Type II ANOVA
-CItuk_model <- lm(CI_tuk ~ substrate, data = mussel_df)
-Anova(CItuk_model, type = "II")
+CI_ANOVA2 <- aov(mussel_df$CI_tuk ~ factor(substrate))
+summary(CI_ANOVA2)
+anova(CI_ANOVA, CI_ANOVA2)
 
-CItuk_residuals = residuals(CItuk_model) # Residuals
-plotNormalHistogram(CItuk_residuals)
+CI_ANOVA3 <- aov(mussel_df$CI_tuk ~ factor(wavebreaker))
+summary(CI_ANOVA3)
+anova(CI_ANOVA, CI_ANOVA3)
 
-qqnorm(residuals(CItuk_model), ylab = "Sample Quantiles for Residuals")
-qqline(residuals(CItuk_model), col = "red")
-plot(fitted(CItuk_model), residuals(CItuk_model))
+# # Type II ANOVA
+# CItuk_model <- lm(CI_tuk ~ substrate, data = mussel_df)
+# Anova(CItuk_model, type = "II")
+# 
+# CItuk_residuals = residuals(CItuk_model) # Residuals
+# plotNormalHistogram(CItuk_residuals)
+# 
+# qqnorm(residuals(CItuk_model), ylab = "Sample Quantiles for Residuals")
+# qqline(residuals(CItuk_model), col = "red")
+# plot(fitted(CItuk_model), residuals(CItuk_model))
+
+# ***************** Survival
+mussel_survival$surv_tuk <- transformTukey(mussel_survival$Corrected.Quadrant.Amount, plotit = FALSE)
+
+# Boxplots of AFDW based on substrate & wavebreaker
+boxplot(surv_tuk ~ mussel_survival$Substrate, data = mussel_survival, 
+        ylab = "Tukey-Transformed Survival", xlab = "Substrate Type")
+boxplot(surv_tuk ~ mussel_survival$Wavebreaker, data = mussel_survival,
+        ylab = "Tukey-Transformed Survival", xlab = "Wavebreaker")
+
+# Type I ANOVA
+S_ANOVA <- aov(mussel_survival$surv_tuk ~ mussel_survival$Substrate*mussel_survival$Wavebreaker)
+summary(S_ANOVA)
+
+S_ANOVA2 <- aov(mussel_survival$surv_tuk ~ factor(mussel_survival$Substrate))
+summary(S_ANOVA2)
+anova(S_ANOVA, S_ANOVA2)
+
+S_ANOVA3 <- aov(mussel_survival$surv_tuk ~ factor(mussel_survival$Wavebreaker))
+summary(S_ANOVA3)
+anova(S_ANOVA, S_ANOVA3)
+
+# # Type II ANOVA
+# CItuk_model <- lm(CI_tuk ~ substrate, data = mussel_df)
+# Anova(CItuk_model, type = "II")
+# 
+# CItuk_residuals = residuals(CItuk_model) # Residuals
+# plotNormalHistogram(CItuk_residuals)
+# 
+# qqnorm(residuals(CItuk_model), ylab = "Sample Quantiles for Residuals")
+# qqline(residuals(CItuk_model), col = "red")
+# plot(fitted(CItuk_model), residuals(CItuk_model))
 
 # # ******************************************* One-Way ANOVA: Box-Cox Transformed Data
 # install.packages("MASS")
@@ -612,10 +734,17 @@ AFDW.m3 <- update(AFDW.m1, random = ~1|plotnr)
 anova(AFDW.m1, AFDW.m3)
 
 # Ignore NA's (na.omit or na.rm)
-survival.m1 <- lme(survival ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
-survival.m2 <- update(survival.m1, random = ~1|squarecode) # Reducing complexity
+
+s_num <- mussel_survival$Corrected.Quadrant.Amount
+s_sub <- mussel_survival$Substrate
+s_wb <- mussel_survival$Wavebreaker
+s_plot <- mussel_survival$Plot
+s_sq <- mussel_survival$squarecode
+
+survival.m1 <- lme(s_num ~ s_sub*s_wb, random = ~1|s_plot/s_sq)
+survival.m2 <- update(survival.m1, random = ~1|s_sq) # Reducing complexity
 anova(survival.m1, survival.m2) # Checking significance 
-survival.m3 <- update(survival.m1, random = ~1|plotnr)
+survival.m3 <- update(survival.m1, random = ~1|s_plot)
 anova(survival.m1, survival.m3)
 
 length.m1 <- lme(mussel_length ~ substrate*wavebreaker, random = ~1|plotnr/squarecode)
@@ -636,9 +765,3 @@ anova(height.m1, height.m2) # Checking significance
 height.m3 <- update(height.m1, random = ~1|plotnr)
 anova(height.m1, height.m3)
 
-
-# Survival against crabs??
-
-# Survival graphs against substrate/wavebreaker
-
-# Growth difference btwn intertidal vs subtidal
